@@ -2,7 +2,7 @@
 
 <p align="center"><img src="https://socialify.git.ci/MotyaG/df/image?description=1&amp;font=Jost&amp;forks=1&amp;issues=1&amp;language=1&amp;logo=http%3A%2F%2F0x0.st%2FXkyn.svg&amp;name=1&amp;owner=1&amp;pattern=Circuit%20Board&amp;stargazers=1&amp;theme=Dark" alt="project-image"></p>
 
-<p id="description">A simple powerful script to format a drive or USB stick to another file system or create a boot USB with ISO image! Just in terminal.</p>
+<p id="description">A simple but powerful script to format a drive or USB stick to another file system or create a boot USB with ISO image! Just in terminal.</p>
 
 <h2>Project Screenshots:</h2>
 
