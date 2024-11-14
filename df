@@ -1,0 +1,50 @@
+#!/bin/bash
+
+if [ "$EUID" -ne 0 ]; then
+  echo "You must be root to perform this operation."
+  exit 1
+fi
+
+main_color="#ffd700"
+warning_color="#ff0000"
+
+export GUM_CONFIRM_SELECTED_BACKGROUND="$main_color"
+export GUM_CHOOSE_CURSOR_FOREGROUND="$main_color"
+export GUM_CHOOSE_SELECTED_FOREGROUND="$main_color"
+export GUM_INPUT_CURSOR_FOREGROUND="$main_color"
+
+clear
+
+filesystem_types="ext4
+xfs
+btrfs
+vfat
+exfat
+reiserfs"
+
+disk="none"
+selected_fs="none"
+selected_option="none"
+
+selected_option=$(gum choose "Format" "Write ISO" --header="Choose a option: ")
+
+if [[ $selected_option = "none" ]]; then
+  echo "You can't select NONE."
+  exit 1
+fi
+
+MakeFS() {
+  disk=$(fdisk -l | grep '^Disk /dev/sd' | awk '{print $2, $3, $4, $5, $6}' | sed 's/://g' | gum choose --limit=1 --header="Select a USB disk:" | awk '{print $1}')
+  selected_fs=$(echo "$filesystem_types" | gum choose --header="Choose a filesystem type:")
+
+  if [ $disk="none" ] || [ $selected_fs="none" ]; then
+    echo "You can't select NONE." 
+    exit 1
+  fi
+
+  gum spin --spinner dot --title "Formatting $disk to $selected_fs..." -- mkfs -t "$selected_fs" "$disk"
+
+  echo "Formatting $disk to $selected_fs completed."
+}
+
+gum confirm "$(printf "Selected disk: $disk \nSelected filesystem: $selected_fs \nAll ok?")" && MakeFS || echo "Exited."
