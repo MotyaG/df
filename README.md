@@ -32,7 +32,7 @@ git clone https://github.com/MotyaG/df.git
 <p>2. Install program</p>
 
 ```
-sudo cp ./uf /usr/bin/
+sudo cp ./df /usr/bin/
 ```
 
 <p>3. Have fun</p>
