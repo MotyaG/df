@@ -24,27 +24,80 @@ reiserfs"
 
 disk="none"
 selected_fs="none"
+selected_file="none"
 selected_option="none"
 
-selected_option=$(gum choose "Format" "Write ISO" --header="Choose a option: ")
+type="none"
 
-if [[ $selected_option = "none" ]]; then
-  echo "You can't select NONE."
-  exit 1
-fi
+while getopts "t:f:s:d:" flag; do
+    case "${flag}" in
+        t) type=${OPTARG};;
+        f) selected_fs=${OPTARG};;
+        s) selected_file=${OPTARG};;
+        d) disk=${OPTARG};;
+    esac
+done
 
-MakeFS() {
+Main () {
+  selected_option=$(gum choose "Format" "Write ISO" --header="Choose an option: ") 
+
+  if [[ $selected_option == "none" ]]; then
+    echo "You can't select NONE."
+    exit 1
+  elif [[ $selected_option == "Format" ]]; then
+    make_fs
+  elif [[ $selected_option == "Write ISO" ]]; then
+    write_iso
+  fi
+}
+
+make_fs () {
+  if [[ $disk == "none" || $selected_fs == "none" ]]; then
+    disk=$(fdisk -l | grep '^Disk /dev/sd' | awk '{print $2, $3, $4, $5, $6}' | sed 's/://g' | gum choose --limit=1 --header="Select a USB disk:" | awk '{print $1}')
+    selected_fs=$(echo "$filesystem_types" | gum choose --header="Choose a filesystem type:")
+  fi
+
+  Format() {
+    gum spin --spinner dot --title "Formatting $disk to $selected_fs..." -- mkfs -t "$selected_fs" "$disk"
+    echo "Formatting $disk to $selected_fs completed."
+  }
+  
+  if [[ $type == "none" ]]; then
+    gum confirm "$(printf "Selected disk: %s\nSelected filesystem: %s\nAll ok?" "$disk" "$selected_fs")" && Format || echo "Exited."
+  else
+    Format
+  fi
+}
+
+write_iso () {
   disk=$(fdisk -l | grep '^Disk /dev/sd' | awk '{print $2, $3, $4, $5, $6}' | sed 's/://g' | gum choose --limit=1 --header="Select a USB disk:" | awk '{print $1}')
-  selected_fs=$(echo "$filesystem_types" | gum choose --header="Choose a filesystem type:")
+  selected_file=$(gum file "/" | gum choose --header="You selected that file?")
 
-  if [ $disk="none" ] || [ $selected_fs="none" ]; then
-    echo "You can't select NONE." 
+  if [[ $selected_file == "none" || $selected_file == "/" ]]; then
+    echo "You can't select NONE."
     exit 1
   fi
 
-  gum spin --spinner dot --title "Formatting $disk to $selected_fs..." -- mkfs -t "$selected_fs" "$disk"
+  write_iso_main () {
+    gum spin --spinner dot --title "Writing ISO to $disk..." -- dd if="$selected_file" of="$disk" bs=4M status=progress && sync
+    echo "Writing ISO to $disk completed."
+  }
 
-  echo "Formatting $disk to $selected_fs completed."
+  gum confirm "$(printf "Selected disk: %s\nSelected ISO: %s\nAll ok?" "$disk" "$selected_file")" && write_iso_main || echo "Exited." 
 }
 
-gum confirm "$(printf "Selected disk: $disk \nSelected filesystem: $selected_fs \nAll ok?")" && MakeFS || echo "Exited."
+if [[ $type != "none" && $type == "format" ]]; then
+  make_fs
+elif [[ $type != "none" && $type == "write_iso" ]]; then
+  write_iso
+else
+  Main
+fi
+
+: <<'END_COMMENT'
+
+So, TODO:
+Create a normal CLI I think
+Rewrite to cpp? idk
+
+END_COMMENT
